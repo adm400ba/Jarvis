@@ -33,9 +33,9 @@ end
 if not isfolder("Jarvis") then makefolder("Jarvis") end
 if not isfolder("Jarvis/jarvis_voice") then makefolder("Jarvis/jarvis_voice") end
 if not isfolder("Jarvis/jarvis_yt_musics") then makefolder("Jarvis/jarvis_yt_musics") end
-local TOKEN = Env.api_key
+local TOKEN = getgenv().api_key
 local MODEL = "openai/gpt-oss-120b"
-local TTS_URL = Env.tts_endpoint
+local TTS_URL = getgenv().tts_endpoint
 local FollowConnection = nil
 local NoclipConnection = nil
 local AntiSitConnection = nil
@@ -52,11 +52,11 @@ MusicSound.Name = "JarvisMusicPlayer"
 MusicSound.Volume = 1
 MusicSound.Looped = true
 MusicSound.Parent = workspace
-Env.CurrentMusicSound = MusicSound
+getgenv().CurrentMusicSound = MusicSound
 
-Env.CurrentMusicTitle = nil
-Env.CurrentMusicChannel = nil
-Env.CurrentMusicDescription = nil
+getgenv().CurrentMusicTitle = nil
+getgenv().CurrentMusicChannel = nil
+getgenv().CurrentMusicDescription = nil
 
 local SYSTEM_PROMPT = [[
 You are Jarvis, an intelligent AI assistant integrated into Roblox.
@@ -399,16 +399,16 @@ end,
 antivoid = function() workspace.FallenPartsDestroyHeight = 0/0 end,
 unantivoid = function() workspace.FallenPartsDestroyHeight = -500 end,
 stopmusic = function()
-if Env.CurrentMusicSound then
-Env.CurrentMusicSound:Stop()
+if getgenv().CurrentMusicSound then
+getgenv().CurrentMusicSound:Stop()
 end
-Env.CurrentMusicTitle = nil
-Env.CurrentMusicChannel = nil
+getgenv().CurrentMusicTitle = nil
+getgenv().CurrentMusicChannel = nil
 end,
-pausemusic = function() if Env.CurrentMusicSound then Env.CurrentMusicSound:Pause() end end,
-resumemusic = function() if Env.CurrentMusicSound then Env.CurrentMusicSound:Resume() end end,
+pausemusic = function() if getgenv().CurrentMusicSound then getgenv().CurrentMusicSound:Pause() end end,
+resumemusic = function() if getgenv().CurrentMusicSound then getgenv().CurrentMusicSound:Resume() end end,
 musicvolume = function(Data)
-if Env.CurrentMusicSound then Env.CurrentMusicSound.Volume = tonumber(Data.value) or 1 end
+if getgenv().CurrentMusicSound then getgenv().CurrentMusicSound.Volume = tonumber(Data.value) or 1 end
 end,
 playmusic = function(Data)
 if not Data.query then return end
@@ -418,38 +418,38 @@ local VideoId = ExtractVideoID(Query)
 local VideoUrl = Query
 local Title, Channel = "Unknown", "Unknown"
 if not VideoId then
-local Info = FetchYtInfo(Env.yt_dlp_endpoint .. "/search?q=" .. HttpService:UrlEncode(Query))
+local Info = FetchYtInfo(getgenv().yt_dlp_endpoint .. "/search?q=" .. HttpService:UrlEncode(Query))
 if Info then
 VideoId, VideoUrl, Title, Channel = Info.id, Info.url, Info.title, Info.channel
-Env.CurrentMusicDescription = Info.description or "Unknown"
+getgenv().CurrentMusicDescription = Info.description or "Unknown"
 end
 else
-local Info = FetchYtInfo(Env.yt_dlp_endpoint .. "/search?q=" .. HttpService:UrlEncode(VideoUrl))
+local Info = FetchYtInfo(getgenv().yt_dlp_endpoint .. "/search?q=" .. HttpService:UrlEncode(VideoUrl))
 if Info then
 Title, Channel = Info.title, Info.channel
-Env.CurrentMusicDescription = Info.description or "Unknown"
+getgenv().CurrentMusicDescription = Info.description or "Unknown"
 end
 end
 if not VideoId then return end
-Env.CurrentMusicTitle = Title
-Env.CurrentMusicChannel = Channel
+getgenv().CurrentMusicTitle = Title
+getgenv().CurrentMusicChannel = Channel
 local FilePath = "Jarvis/jarvis_yt_musics/" .. VideoId .. ".mp3"
 if not isfile(FilePath) then
 SendNotification("Processing Audio...", "Please wait, processing audio.", 5)
 pcall(function()
 local Req = request({
-Url = Env.yt_dlp_endpoint .. "/mp3?url=" .. HttpService:UrlEncode(VideoUrl),
+Url = getgenv().yt_dlp_endpoint .. "/mp3?url=" .. HttpService:UrlEncode(VideoUrl),
 Method = "GET"
 })
 if Req.Success then writefile(FilePath, Req.Body) end
 end)
 end
 if isfile(FilePath) then
-if Env.CurrentMusicSound then
-Env.CurrentMusicSound:Stop()
-Env.CurrentMusicSound.SoundId = getcustomasset(FilePath)
-Env.CurrentMusicSound.TimePosition = 0
-Env.CurrentMusicSound:Play()
+if getgenv().CurrentMusicSound then
+getgenv().CurrentMusicSound:Stop()
+getgenv().CurrentMusicSound.SoundId = getcustomasset(FilePath)
+getgenv().CurrentMusicSound.TimePosition = 0
+getgenv().CurrentMusicSound:Play()
 end
 end
 end)
@@ -482,8 +482,8 @@ if #ConversationHistory > 20 then
 table.remove(ConversationHistory, 1)
 end
 local CurrentSysPrompt = SYSTEM_PROMPT
-if Env.CurrentMusicTitle and Env.CurrentMusicChannel then
-CurrentSysPrompt = CurrentSysPrompt .. "\nCurrently playing music: " .. Env.CurrentMusicTitle .. " by channel: " .. Env.CurrentMusicChannel .. ". Description: " .. tostring(Env.CurrentMusicDescription) .. ". The default volume is 1."
+if getgenv().CurrentMusicTitle and getgenv().CurrentMusicChannel then
+CurrentSysPrompt = CurrentSysPrompt .. "\nCurrently playing music: " .. getgenv().CurrentMusicTitle .. " by channel: " .. getgenv().CurrentMusicChannel .. ". Description: " .. tostring(getgenv().CurrentMusicDescription) .. ". The default volume is 1."
 end
 local Messages = { { role = "system", content = CurrentSysPrompt } }
 for _, Msg in ipairs(ConversationHistory) do
