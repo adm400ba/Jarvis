@@ -441,14 +441,26 @@ getgenv().CurrentMusicTitle = Title
 getgenv().CurrentMusicChannel = Channel
 local FilePath = "Jarvis/jarvis_yt_musics/" .. VideoId .. ".mp3"
 if not isfile(FilePath) then
-SendNotification("Processing Audio...", "Please wait, processing audio.", 5)
-pcall(function()
-local Req = request({
-Url = getgenv().yt_dlp_endpoint .. "/mp3?url=" .. HttpService:UrlEncode(VideoUrl),
-Method = "GET"
+warn("Processing audio...")
+SendNotification("Processing audio...", "Please wait, processing audio.", 5)
+local Success,Error=pcall(function()
+local Req=request({
+Url=getgenv().yt_dlp_endpoint.."/mp3?url="..HttpService:UrlEncode(VideoUrl),
+Method="GET"
 })
-if Req.Success then writefile(FilePath, Req.Body) end
+if Req.Success then
+writefile(FilePath,Req.Body)
+else
+warn("Failed to process audio!")
+warn("Status Code: "..tostring(Req.StatusCode))
+warn("Status Message: "..tostring(Req.StatusMessage))
+warn("Server Response: "..tostring(Req.Body))
+SendNotification("Failed to process audio","Server returned HTTP "..tostring(Req.StatusCode),5)
+end
 end)
+if not Success then
+warn("Request Error: "..tostring(Error))
+end
 end
 if isfile(FilePath) then
 if getgenv().CurrentMusicSound then
