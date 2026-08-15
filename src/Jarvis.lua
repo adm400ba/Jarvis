@@ -13,7 +13,7 @@ Just A Rather Very Intelligent System.
 - Jarvis, How many stars are there in the universe?
 ]]              
 
-local Players = game:GetService("Players")
+local Players = cloneref(game:GetService("Players"))
 local TextChatService = cloneref(game:GetService("TextChatService"))
 local HttpService = cloneref(game:GetService("HttpService"))
 local RunService = cloneref(game:GetService("RunService"))
