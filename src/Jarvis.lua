@@ -30,6 +30,12 @@ SendNotification = function(Text, Description, Duration)
     end)
 end
 
+if getgenv().JarvisLoaded then
+warn("Jarvis already loaded!")
+SendNotification("Jarvis already loaded", "Jarvis already loaded!", 5)
+return
+end
+
 if not isfolder("Jarvis") then makefolder("Jarvis") end
 if not isfolder("Jarvis/jarvis_voice") then makefolder("Jarvis/jarvis_voice") end
 if not isfolder("Jarvis/jarvis_yt_musics") then makefolder("Jarvis/jarvis_yt_musics") end
@@ -570,3 +576,5 @@ end
 end)
 end)
 warn("Jarvis loaded!")
+SendNotification("Jarvis loaded", "Jarvis successfully loaded!", 5)
+getgenv().JarvisLoaded = true
