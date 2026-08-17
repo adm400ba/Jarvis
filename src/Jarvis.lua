@@ -443,11 +443,42 @@ local Views = 0
 if not VideoId then
 local Info = FetchYtInfo(getgenv().yt_dlp_endpoint .. "/search?q=" .. HttpService:UrlEncode(Query))
 if Info and Info.results then
-local BestResult, BestViews = nil, -1
+local BestResult, BestScore
+local QueryLower = Query:lower():gsub("[%p]", " ")
+local QueryWords = {}
+for Word in QueryLower:gmatch("[%wÀ-ÿ]+") do
+if #Word > 1 then
+table.insert(QueryWords, Word)
+end
+end
 for _, Result in ipairs(Info.results) do
+local Score = 0
+local TitleLower = tostring(Result.title or ""):lower()
+local ChannelLower = tostring(Result.channel or ""):lower()
+local DescriptionLower = tostring(Result.description or ""):lower()
+local MatchedWords = 0
+for _, Word in ipairs(QueryWords) do
+if TitleLower:find(Word, 1, true) then
+Score += 100
+MatchedWords += 1
+elseif ChannelLower:find(Word, 1, true) then
+Score += 20
+elseif DescriptionLower:find(Word, 1, true) then
+Score += 5
+end
+end
+if #QueryWords > 0 and MatchedWords == #QueryWords then
+Score += 1000
+end
+if TitleLower == QueryLower then
+Score += 5000
+end
 local ViewsValue = tonumber(Result.views) or 0
-if ViewsValue > BestViews then
-BestViews = ViewsValue
+if ViewsValue > 0 then
+Score += math.min(math.log10(ViewsValue) * 10, 100)
+end
+if not BestScore or Score > BestScore then
+BestScore = Score
 BestResult = Result
 end
 end
