@@ -11,7 +11,9 @@ Just A Rather Very Intelligent System.
 - Jarvis, play Megalovania by Toby Fox.
 - Jarvis, set my WalkSpeed to 50.       
 - Jarvis, How many stars are there in the universe?
-]]              
+]]
+
+local VERSION = "v0.1.0"          
 
 local Players = cloneref(game:GetService("Players"))
 local TextChatService = cloneref(game:GetService("TextChatService"))
@@ -31,8 +33,8 @@ SendNotification = function(Text, Description, Duration)
 end
 
 if getgenv().JarvisLoaded then
-warn("Jarvis already loaded!")
-SendNotification("Jarvis already loaded", "Jarvis already loaded!", 5)
+warn("Jarvis already loaded!\n" .. VERSION)
+SendNotification("Jarvis already loaded", "Jarvis already loaded!\n" .. VERSION, 5)
 return
 end
 
@@ -595,6 +597,6 @@ PlayTTS(Reply)
 end
 end)
 end)
-warn("Jarvis loaded!")
-SendNotification("Jarvis loaded", "Jarvis successfully loaded!", 5)
+warn("Jarvis loaded!\n" .. VERSION)
+SendNotification("Jarvis loaded", "Jarvis successfully loaded!\n" .. VERSION, 5)
 getgenv().JarvisLoaded = true
