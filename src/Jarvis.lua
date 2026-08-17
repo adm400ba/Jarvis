@@ -14,6 +14,7 @@ Just A Rather Very Intelligent System.
 ]]
 
 local VERSION = "v0.1.1"          
+local LOGGER_NAME = "[JARVIS] "
 
 local Players = cloneref(game:GetService("Players"))
 local TextChatService = cloneref(game:GetService("TextChatService"))
@@ -33,19 +34,19 @@ SendNotification = function(Text, Description, Duration)
 end
 
 if getgenv().JarvisLoaded then
-warn("Jarvis already loaded!\n" .. VERSION)
+warn(LOGGER_NAME .. "Jarvis already loaded!\n" .. VERSION)
 SendNotification("Jarvis already loaded", "Jarvis already loaded!\n" .. VERSION, 5)
 return
 end
 
 if not getgenv().api_key then
-warn("api_key is missing.")
+warn(LOGGER_NAME .. "api_key is missing.")
 SendNotification("Missing variable", "api_key is missing.", 5)
 elseif not getgenv().tts_endpoint then
-warn("tts_endpoint is missing.")
+warn(LOGGER_NAME .. "tts_endpoint is missing.")
 SendNotification("Missing variable", "tts_endpoint is missing.", 5)
 elseif not getgenv().yt_dlp_endpoint then
-warn("yt_dlp_endpoint is missing.")
+warn(LOGGER_NAME .. "yt_dlp_endpoint is missing.")
 SendNotification("Missing variable", "yt_dlp_endpoint is missing.", 5)
 end
 
@@ -269,7 +270,7 @@ Headers={["Content-Type"]="application/json"},
 Body=HttpService:JSONEncode({texto=Text})
 })
 end)
-if not Success or not Response or not Response.Success then local ErrorMessage=not Success and tostring(Response) or (Response and ("HTTP "..tostring(Response.StatusCode).." "..tostring(Response.StatusMessage)) or "Unknown error"); warn("TTS Error: "..ErrorMessage); SendNotification("TTS Error", ErrorMessage, 5); return end
+if not Success or not Response or not Response.Success then local ErrorMessage=not Success and tostring(Response) or (Response and ("HTTP "..tostring(Response.StatusCode).." "..tostring(Response.StatusMessage)) or "Unknown error"); warn(LOGGER_NAME .. "TTS Error: "..ErrorMessage); SendNotification("TTS Error", ErrorMessage, 5); return end
 writefile(File,Response.Body)
 if Generation~=TTSGeneration then
 if isfile(File) then pcall(function() delfile(File) end) end
@@ -280,7 +281,7 @@ TTSSound.SoundId=""
 local SuccessAsset,Asset=pcall(function()
 return getcustomasset(File)
 end)
-if not SuccessAsset or not Asset or Generation~=TTSGeneration then if not SuccessAsset or not Asset then local ErrorMessage=tostring(Asset); warn("TTS Asset Error: "..ErrorMessage); SendNotification("TTS Asset Error", ErrorMessage, 5); end
+if not SuccessAsset or not Asset or Generation~=TTSGeneration then if not SuccessAsset or not Asset then local ErrorMessage=tostring(Asset); warn(LOGGER_NAME .. "TTS Asset Error: "..ErrorMessage); SendNotification("TTS Asset Error", ErrorMessage, 5); end
 if isfile(File) then pcall(function() delfile(File) end) end
 return
 end
@@ -503,7 +504,7 @@ getgenv().CurrentMusicTitle = Title
 getgenv().CurrentMusicChannel = Channel
 local FilePath = "Jarvis/jarvis_yt_musics/" .. VideoId .. ".mp3"
 if not isfile(FilePath) then
-warn("Processing audio...")
+warn(LOGGER_NAME .. "Processing audio...")
 SendNotification("Processing audio...", "Please wait, processing audio.", 5)
 local Success,Error=pcall(function()
 local Req=request({
@@ -513,15 +514,15 @@ Method="GET"
 if Req.Success then
 writefile(FilePath,Req.Body)
 else
-warn("Failed to process audio!")
-warn("Status Code: "..tostring(Req.StatusCode))
-warn("Status Message: "..tostring(Req.StatusMessage))
-warn("Server Response: "..tostring(Req.Body))
+warn(LOGGER_NAME .. "Failed to process audio!")
+warn(LOGGER_NAME .. "Status Code: "..tostring(Req.StatusCode))
+warn(LOGGER_NAME .. "Status Message: "..tostring(Req.StatusMessage))
+warn(LOGGER_NAME .. "Server Response: "..tostring(Req.Body))
 SendNotification("Failed to process audio","Server returned HTTP "..tostring(Req.StatusCode),5)
 end
 end)
 if not Success then
-warn("Request Error: "..tostring(Error))
+warn(LOGGER_NAME .. "Request Error: "..tostring(Error))
 end
 end
 if isfile(FilePath) then
@@ -601,12 +602,12 @@ LastError = "No response received"
 end
 task.wait(2)
 end
-if not Response then warn("Response Error: "..LastError); SendNotification("Response Error", LastError, 5); return "Failed to connect to API." end
+if not Response then warn(LOGGER_NAME .. "Response Error: "..LastError); SendNotification("Response Error", LastError, 5); return "Failed to connect to API." end
 local Ok, Data = pcall(function() return HttpService:JSONDecode(Response.Body) end)
-if not Ok then warn("Response Error: "..tostring(Data)); SendNotification("Response Error", tostring(Data), 5); return "Failed to parse API response." end
+if not Ok then warn(LOGGER_NAME .. "Response Error: "..tostring(Data)); SendNotification("Response Error", tostring(Data), 5); return "Failed to parse API response." end
 local Text
 pcall(function() Text = Data.choices[1].message.content end)
-if not Text or Text == "" then warn("Response Error: Empty response from API"); SendNotification("Response Error", "Empty response from API", 5); return "No response." end
+if not Text or Text == "" then warn(LOGGER_NAME .. "Response Error: Empty response from API"); SendNotification("Response Error", "Empty response from API", 5); return "No response." end
 table.insert(ConversationHistory, { role = "assistant", content = Text })
 if #ConversationHistory > 20 then
 table.remove(ConversationHistory, 1)
@@ -657,6 +658,6 @@ PlayTTS(Reply)
 end
 end)
 end)
-warn("Jarvis loaded!\n" .. VERSION)
+warn(LOGGER_NAME .. "Jarvis loaded!\n" .. VERSION)
 SendNotification("Jarvis loaded", "Jarvis successfully loaded!\n" .. VERSION, 5)
 getgenv().JarvisLoaded = true
