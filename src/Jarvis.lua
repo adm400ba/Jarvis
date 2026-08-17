@@ -13,7 +13,7 @@ Just A Rather Very Intelligent System.
 - Jarvis, How many stars are there in the universe?
 ]]
 
-local VERSION = "v0.1.0"          
+local VERSION = "v0.1.1"          
 
 local Players = cloneref(game:GetService("Players"))
 local TextChatService = cloneref(game:GetService("TextChatService"))
@@ -36,6 +36,17 @@ if getgenv().JarvisLoaded then
 warn("Jarvis already loaded!\n" .. VERSION)
 SendNotification("Jarvis already loaded", "Jarvis already loaded!\n" .. VERSION, 5)
 return
+end
+
+if not getgenv().api_key then
+warn("api_key is missing.")
+SendNotification("Missing variable", "api_key is missing.", 5)
+elseif not getgenv().tts_endpoint then
+warn("tts_endpoint is missing.")
+SendNotification("Missing variable", "tts_endpoint is missing.", 5)
+elseif not getgenv().yt_dlp_endpoint then
+warn("yt_dlp_endpoint is missing.")
+SendNotification("Missing variable", "yt_dlp_endpoint is missing.", 5)
 end
 
 if not isfolder("Jarvis") then makefolder("Jarvis") end
@@ -65,6 +76,7 @@ getgenv().CurrentMusicSound = MusicSound
 getgenv().CurrentMusicTitle = nil
 getgenv().CurrentMusicChannel = nil
 getgenv().CurrentMusicDescription = nil
+getgenv().CurrentMusicViews = nil
 
 local SYSTEM_PROMPT = [[
 You are Jarvis, an intelligent AI assistant integrated into Roblox.
@@ -334,7 +346,7 @@ local Req = request({ Url = Url, Method = "GET" })
 if Req.Success then return HttpService:JSONDecode(Req.Body) end
 end)
 if Success and Result and Result.results and #Result.results > 0 then
-return Result.results[1]
+return Result
 end
 return nil
 end
@@ -412,6 +424,7 @@ getgenv().CurrentMusicSound:Stop()
 end
 getgenv().CurrentMusicTitle = nil
 getgenv().CurrentMusicChannel = nil
+getgenv().CurrentMusicViews = nil
 end,
 pausemusic = function() if getgenv().CurrentMusicSound then getgenv().CurrentMusicSound:Pause() end end,
 resumemusic = function() if getgenv().CurrentMusicSound then getgenv().CurrentMusicSound:Resume() end end,
@@ -425,17 +438,64 @@ local Query = tostring(Data.query)
 local VideoId = ExtractVideoID(Query)
 local VideoUrl = Query
 local Title, Channel = "Unknown", "Unknown"
+local Views = 0
 if not VideoId then
 local Info = FetchYtInfo(getgenv().yt_dlp_endpoint .. "/search?q=" .. HttpService:UrlEncode(Query))
-if Info then
-VideoId, VideoUrl, Title, Channel = Info.id, Info.url, Info.title, Info.channel
-getgenv().CurrentMusicDescription = Info.description or "Unknown"
+if Info and Info.results then
+local BestResult, BestScore
+local QueryLower = Query:lower():gsub("[%p]", " ")
+local QueryWords = {}
+for Word in QueryLower:gmatch("[%wÀ-ÿ]+") do
+if #Word > 1 then
+table.insert(QueryWords, Word)
+end
+end
+for _, Result in ipairs(Info.results) do
+local Score = 0
+local TitleLower = tostring(Result.title or ""):lower()
+local ChannelLower = tostring(Result.channel or ""):lower()
+local DescriptionLower = tostring(Result.description or ""):lower()
+local MatchedWords = 0
+for _, Word in ipairs(QueryWords) do
+if TitleLower:find(Word, 1, true) then
+Score += 100
+MatchedWords += 1
+elseif ChannelLower:find(Word, 1, true) then
+Score += 20
+elseif DescriptionLower:find(Word, 1, true) then
+Score += 5
+end
+end
+if #QueryWords > 0 and MatchedWords == #QueryWords then
+Score += 1000
+end
+if TitleLower == QueryLower then
+Score += 5000
+end
+local ViewsValue = tonumber(Result.views) or 0
+if ViewsValue > 0 then
+Score += math.min(math.log10(ViewsValue) * 10, 100)
+end
+if not BestScore or Score > BestScore then
+BestScore = Score
+BestResult = Result
+end
+end
+if BestResult then
+VideoId, VideoUrl, Title, Channel = BestResult.id, BestResult.url, BestResult.title, BestResult.channel
+Views = tonumber(BestResult.views) or 0
+getgenv().CurrentMusicDescription = BestResult.description or "Unknown"
+getgenv().CurrentMusicViews = Views
+end
 end
 else
 local Info = FetchYtInfo(getgenv().yt_dlp_endpoint .. "/search?q=" .. HttpService:UrlEncode(VideoUrl))
-if Info then
-Title, Channel = Info.title, Info.channel
-getgenv().CurrentMusicDescription = Info.description or "Unknown"
+if Info and Info.results and Info.results[1] then
+local Result = Info.results[1]
+Title, Channel = Result.title, Result.channel
+Views = tonumber(Result.views) or 0
+getgenv().CurrentMusicDescription = Result.description or "Unknown"
+getgenv().CurrentMusicViews = Views
 end
 end
 if not VideoId then return end
@@ -503,7 +563,7 @@ table.remove(ConversationHistory, 1)
 end
 local CurrentSysPrompt = SYSTEM_PROMPT
 if getgenv().CurrentMusicTitle and getgenv().CurrentMusicChannel then
-CurrentSysPrompt = CurrentSysPrompt .. "\nCurrently playing music: " .. getgenv().CurrentMusicTitle .. " by channel: " .. getgenv().CurrentMusicChannel .. ". Description: " .. tostring(getgenv().CurrentMusicDescription) .. ". The default volume is 1."
+CurrentSysPrompt = CurrentSysPrompt .. "\nCurrently playing music: " .. getgenv().CurrentMusicTitle .. " by channel: " .. getgenv().CurrentMusicChannel .. ". Description: " .. tostring(getgenv().CurrentMusicDescription) .. ". Views: " .. tostring(getgenv().CurrentMusicViews or 0) .. ". The default volume is 1."
 end
 local Messages = { { role = "system", content = CurrentSysPrompt } }
 for _, Msg in ipairs(ConversationHistory) do
