@@ -255,7 +255,7 @@ Headers={["Content-Type"]="application/json"},
 Body=HttpService:JSONEncode({texto=Text})
 })
 end)
-if not Success or not Response or not Response.Success then return end
+if not Success or not Response or not Response.Success then local ErrorMessage=not Success and tostring(Response) or (Response and ("HTTP "..tostring(Response.StatusCode).." "..tostring(Response.StatusMessage)) or "Unknown error"); warn("TTS Error: "..ErrorMessage); SendNotification("TTS Error", ErrorMessage, 5); return end
 writefile(File,Response.Body)
 if Generation~=TTSGeneration then
 if isfile(File) then pcall(function() delfile(File) end) end
@@ -266,7 +266,7 @@ TTSSound.SoundId=""
 local SuccessAsset,Asset=pcall(function()
 return getcustomasset(File)
 end)
-if not SuccessAsset or not Asset or Generation~=TTSGeneration then
+if not SuccessAsset or not Asset or Generation~=TTSGeneration then if not SuccessAsset or not Asset then local ErrorMessage=tostring(Asset); warn("TTS Asset Error: "..ErrorMessage); SendNotification("TTS Asset Error", ErrorMessage, 5); end
 if isfile(File) then pcall(function() delfile(File) end) end
 return
 end
@@ -513,6 +513,7 @@ messages = Messages,
 temperature = 0.7
 })
 local Response
+local LastError = "Unknown error"
 for _ = 1, 3 do
 local Success, Result = pcall(function()
 return request({
@@ -529,14 +530,21 @@ if Success and Result and Result.StatusCode == 200 then
 Response = Result
 break
 end
+if not Success then
+LastError = tostring(Result)
+elseif Result then
+LastError = "HTTP " .. tostring(Result.StatusCode) .. " " .. tostring(Result.StatusMessage)
+else
+LastError = "No response received"
+end
 task.wait(2)
 end
-if not Response then return "Erro ao conectar." end
+if not Response then warn("Response Error: "..LastError); SendNotification("Response Error", LastError, 5); return "Failed to connect to API." end
 local Ok, Data = pcall(function() return HttpService:JSONDecode(Response.Body) end)
-if not Ok then return "Erro ao ler resposta." end
+if not Ok then warn("Response Error: "..tostring(Data)); SendNotification("Response Error", tostring(Data), 5); return "Failed to parse API response." end
 local Text
 pcall(function() Text = Data.choices[1].message.content end)
-if not Text or Text == "" then return "Sem resposta." end
+if not Text or Text == "" then warn("Response Error: Empty response from API"); SendNotification("Response Error", "Empty response from API", 5); return "No response." end
 table.insert(ConversationHistory, { role = "assistant", content = Text })
 if #ConversationHistory > 20 then
 table.remove(ConversationHistory, 1)
