@@ -93,6 +93,7 @@ Rules:
 - The "reply" field must be a short, natural confirmation related to the action.
 - Vary confirmation messages and avoid repeating the same wording.
 - Understand spelling mistakes, abbreviations, slang, and alternative wording.
+- When playing music, the system automatically selects the video with the most views.
 
 Available commands:
 {"command":"jump"}
@@ -475,7 +476,7 @@ Score += 5000
 end
 local ViewsValue = tonumber(Result.views) or 0
 if ViewsValue > 0 then
-Score += math.min(math.log10(ViewsValue) * 10, 100)
+Score += ViewsValue
 end
 if not BestScore or Score > BestScore then
 BestScore = Score
